@@ -46,6 +46,7 @@ class ContactController extends Controller
             ->with(['favorites' => function ($query) {
                 $query->where('user_id', auth()->id());
             }])
+            ->with(['user:id,status'])
             ->get()
             ->map(function ($contact) {
                 $contact->is_favorite = $contact->favorites->isNotEmpty(); 
