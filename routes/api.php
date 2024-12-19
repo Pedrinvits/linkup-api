@@ -17,6 +17,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/users', UserController::class);
     Route::post('/logout', [AuthController::class, 'logout']);
     
+    // Route::put('/users', [UserController::class, 'update']);
+
     Route::get('/contacts', [ContactController::class, 'index']);
     Route::get('/contacts/{id}', [ContactController::class, 'show']);
     Route::post('/contacts', [ContactController::class, 'store']);
@@ -26,4 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/favorites', [FavoritesController::class, 'store']);
     Route::get('/favorites', [FavoritesController::class, 'index']);
     Route::delete('/favorites/{id}', [FavoritesController::class, 'destroy']);
+
+    Route::post('/', [AuthController::class, 'login']);
+
 });

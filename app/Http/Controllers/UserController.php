@@ -41,12 +41,16 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
-            'password' => 'sometimes|min:6',
+            'status' => 'sometimes|string|max:255',
+            'phone' => 'sometimes|string',
         ]);
+       
+        $user->update($validated);
 
-        $user->update(array_filter($validated));
-
-        return response()->json($user);
+        return response()->json([
+            'message' => 'Usuário alterado com sucesso!',
+            'user' => $user,
+        ]);
     }
 
     public function destroy($id)
