@@ -7,17 +7,117 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
+
+/**
+ * @OA\Info(
+ *     version="1.0.0",
+ *     title="API Documentation",
+ *     description="API documentation for your application.",
+ *     @OA\Contact(
+ *         email="support@yourdomain.com"
+ *     ),
+ *     @OA\License(
+ *         name="Apache 2.0",
+ *         url="http://www.apache.org/licenses/LICENSE-2.0.html"
+ *     )
+ * )
+ * @OA\Server(
+ *     url="http://localhost:8000/api",
+ *     description="Local development server"
+ * )
+ * @OA\Schema(
+ *     schema="User",
+ *     type="object",
+ *     description="User model",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="John Doe"),
+ *     @OA\Property(property="email", type="string", example="john.doe@example.com"),
+ *     @OA\Property(property="phone", type="string", example="1499823432"),
+ *     @OA\Property(property="status", type="string", example="active"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-12-20T10:00:00Z"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-12-20T10:30:00Z"),
+ * )
+ */
 class UserController extends Controller
 {
+    
+    /**
+     * @OA\Get(
+     *     path="/api/users",
+     *     summary="Retrieve a list of users",
+     *     description="Returns a list of all registered users.",
+     *     tags={"Users"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of users",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/User")
+     *         )
+     *     )
+     * )
+     */
+
     public function index()
     {
         return User::all();
     }
-
+    /**
+     * @OA\Get(
+     *     path="/users/{id}",
+     *     summary="Get user details",
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="User ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User details",
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="User not found")
+     *         )
+     *     )
+     * )
+     */
     public function show($id)
     {
         return User::findOrFail($id);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/register",
+     *     summary="Registrar novo usuário",
+     *     tags={"Users"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "email", "password", "phone"},
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", example="john.doe@example.com"),
+     *             @OA\Property(property="password", type="string", example="password123"),
+     *             @OA\Property(property="phone", type="string", example="1234567890")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Usuário criado com sucesso"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Erro de validação"
+     *     )
+     * )
+     */
 
     public function store(Request $request)
     {
@@ -61,7 +161,36 @@ class UserController extends Controller
             ], 422);
         }
     }
-
+    /**
+     * @OA\Put(
+     *     path="/users/{id}",
+     *     summary="Update a user",
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="User ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", example="john.doe@example.com"),
+     *             @OA\Property(property="phone", type="string", example="1234567890")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Usuário alterado com sucesso!"),
+     *             @OA\Property(property="user", type="object")
+     *         )
+     *     )
+     * )
+     */
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
@@ -81,6 +210,28 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/users/{id}",
+     *     summary="Delete a user",
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="User ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="User deleted")
+     *         )
+     *     )
+     * )
+     */
+    
     public function destroy($id)
     {
         $user = User::findOrFail($id);
@@ -88,6 +239,30 @@ class UserController extends Controller
 
         return response()->json(['message' => 'User deleted']);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/login",
+     *     summary="Login do usuário",
+     *     tags={"Users"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email", "password"},
+     *             @OA\Property(property="email", type="string", example="john.doe@example.com"),
+     *             @OA\Property(property="password", type="string", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login efetuado com sucesso"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Credenciais inválidas"
+     *     )
+     * )
+     */
 
     public function login(Request $request)
     {
