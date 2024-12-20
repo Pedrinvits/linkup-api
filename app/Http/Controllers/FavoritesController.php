@@ -16,52 +16,22 @@ class FavoritesController extends Controller
 
         $contact = Contact::findOrFail($request->contact_id);
 
-        $favorite = Favorite::where('user_id', auth()->id())
-                            ->where('contact_id', $contact->id)
-                            ->first();
+        $response = Favorite::toggleFavorite(auth()->id(), $contact->id);
 
-        if ($favorite) {
-
-            $Rmfavorite = Favorite::where('user_id', auth()->id())
-                            ->where('contact_id', $contact->id)
-                            ->firstOrFail();
-                            
-            $Rmfavorite->delete();
-
-            return response()->json([
-                'message' => 'Contato removido dos favoritos com sucesso!',
-                'status' => 201,
-            ]);
-        }
-
-        $favorite = new Favorite();
-        $favorite->user_id = auth()->id();
-        $favorite->contact_id = $contact->id;
-        $favorite->save();
-
-        return response()->json([
-            'message' => 'Contato adicionado aos favoritos com sucesso!',
-            'status' => 201,
-        ]);
+        return response()->json($response);
     }
 
     public function index()
     {
-        $favorites = Favorite::where('user_id', auth()->id())
-                             ->with('contact')
-                             ->get();
-                             
+        $favorites = Favorite::getFavoritesForUser(auth()->id());
+
         return response()->json($favorites);
     }
 
     public function destroy($id)
     {
-        $favorite = Favorite::where('user_id', auth()->id())
-                            ->where('contact_id', $id)
-                            ->firstOrFail();
-                            
-        $favorite->delete();
+        $response = Favorite::removeFavorite(auth()->id(), $id);
 
-        return response()->json(['message' => 'Contato removido dos favoritos com sucesso!']);
+        return response()->json($response);
     }
 }

@@ -14,19 +14,49 @@ class Favorite extends Model
         'contact_id', 
     ];
 
-    /**
-     * Relação com o usuário.
-     */
     public function user()
     {
         return $this->belongsTo(User::class); 
     }
 
-    /**
-     * Relação com o contato.
-     */
     public function contact()
     {
         return $this->belongsTo(Contact::class); 
+    }
+
+    public static function toggleFavorite($userId, $contactId)
+    {
+        $favorite = self::where('user_id', $userId)
+                        ->where('contact_id', $contactId)
+                        ->first();
+
+        if ($favorite) {
+            $favorite->delete();
+            return ['message' => 'Contato removido dos favoritos com sucesso!', 'status' => 201];
+        }
+
+        $newFavorite = new self();
+        $newFavorite->user_id = $userId;
+        $newFavorite->contact_id = $contactId;
+        $newFavorite->save();
+
+        return ['message' => 'Contato adicionado aos favoritos com sucesso!', 'status' => 201];
+    }
+
+    public static function getFavoritesForUser($userId)
+    {
+        return self::where('user_id', $userId)
+                    ->with('contact')
+                    ->get();
+    }
+
+    public static function removeFavorite($userId, $contactId)
+    {
+        $favorite = self::where('user_id', $userId)
+                        ->where('contact_id', $contactId)
+                        ->firstOrFail();
+        $favorite->delete();
+
+        return ['message' => 'Contato removido dos favoritos com sucesso!'];
     }
 }
