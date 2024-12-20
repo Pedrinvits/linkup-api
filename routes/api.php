@@ -7,17 +7,16 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\FavoritesController;
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [UserController::class, 'store']);
+Route::post('/login', [UserController::class, 'login']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
 Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('/users', UserController::class);
-    Route::post('/logout', [AuthController::class, 'logout']);
-    
-    // Route::put('/users', [UserController::class, 'update']);
+    Route::apiResource('/users', UserController::class)->except(['store', 'login']);
+    Route::post('/logout', [UserController::class, 'logout']);
 
     Route::get('/contacts', [ContactController::class, 'index']);
     Route::get('/contacts/{id}', [ContactController::class, 'show']);
@@ -28,7 +27,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/favorites', [FavoritesController::class, 'store']);
     Route::get('/favorites', [FavoritesController::class, 'index']);
     Route::delete('/favorites/{id}', [FavoritesController::class, 'destroy']);
-
-    Route::post('/', [AuthController::class, 'login']);
-
 });

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -19,19 +21,45 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
-        ]);
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => bcrypt($validated['password']),
-        ]);
-
-        return response()->json($user, 201);
+        try{
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email',
+                'password' => 'required|min:6',
+                'phone' => 'required|min:11',
+            ]);
+            
+            if (User::where('email', $validated['email'])->exists()) {
+                return response()->json([
+                    'errors' => 'E-mail já está em uso.',
+                ], 422);
+            }
+    
+            if (User::where('phone', $validated['phone'])->exists()) {
+                return response()->json([
+                    'errors' => 'Telefone já está em uso.',
+                ], 422);
+            }
+    
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'phone' => $validated['phone'],
+            ]);
+    
+            return response()->json([
+                'user' => $user,
+                'token' => $user->createToken('auth_token')->plainTextToken,
+                'message' => 'Usuário criado com sucesso',
+            ]);
+        }
+        catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'errors' => $e->errors(),
+                'message' => 'Os dados fornecidos são inválidos.',
+            ], 422);
+        }
     }
 
     public function update(Request $request, $id)
@@ -59,5 +87,46 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'User deleted']);
+    }
+
+    public function login(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
+    
+            $user = User::where('email', $validated['email'])->first();
+    
+            if (! $user || ! Hash::check($validated['password'], $user->password)) {
+                return response()->json([
+                    'error' => 'Credenciais inválidas',
+                ]);
+            }
+    
+            return response()->json([
+                'token' => $user->createToken('auth_token')->plainTextToken,
+                'data' => $user,
+                'message' => 'Login efetuado com sucesso',
+            ]);
+        } catch(\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'errors' => $e->errors(),
+            ], 422);
+        }
+    }
+
+    public function logout(Request $request)
+    {
+        try {
+            $request->user()->tokens()->delete();
+
+            return response()->json(['message' => 'Logged out']);
+        } catch(\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'errors' => $e->errors(),
+            ], 422);
+        }
     }
 }
