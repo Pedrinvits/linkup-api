@@ -10,10 +10,12 @@ class ContactController extends Controller
 {
     public function store(Request $request)
     {
+        
         $request->validate([
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:15',
+            'phone' => 'required|string|min:11',
             'city' => 'required|string|max:255',
+            'email' => 'required|string',
         ]);
        
         $contactExists = Contact::where('user_id', auth()->id())
@@ -24,12 +26,21 @@ class ContactController extends Controller
         if($contactExists){
             return response()->json("Contato já cadastrado!", 400);
         }
+       
+        $user = User::where('email', $request->email)
+                    ->first();
 
+        if(!isset($user)){
+            return response()->json(['message' => 'Usuário não encontrado!'], 400);
+        }
+       
         $contact = new Contact();
         $contact->user_id = auth()->id();  
         $contact->name = $request->name;
         $contact->phone = $request->phone;
         $contact->city = $request->city;
+        $contact->email = $request->email;
+        $contact->status = 'ACTIVE'; // retirar dps
         $contact->save();
 
         return response()->json([
@@ -46,11 +57,20 @@ class ContactController extends Controller
             ->with(['favorites' => function ($query) {
                 $query->where('user_id', auth()->id());
             }])
-            ->with(['user:id,status'])
             ->get()
             ->map(function ($contact) {
                 $contact->is_favorite = $contact->favorites->isNotEmpty(); 
                 unset($contact->favorites);
+                
+                $user = User::where('email', $contact->email)->first();
+
+                if ($user) {
+                    $contact->user_info = [
+                        'status' => $user->status,
+                    ];
+                } else {
+                    $contact->user_info = null;
+                }
 
                 return $contact;
             });
